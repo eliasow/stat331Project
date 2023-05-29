@@ -61,4 +61,9 @@ joined |>
   geom_point()
 ```
 
+```{r filtering out k's}
+joined |>
+  mutate(gdp = ifelse(str_detect(gdp, "k$"), as.numeric(str_remove(gdp, "k$")) * 1000,
+                      gdp))
+```
 

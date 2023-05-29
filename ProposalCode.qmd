@@ -1,0 +1,55 @@
+---
+title: "Final Project"
+author: "Kyle McGrath"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    toc: true
+    number-sections: true
+editor: source
+execute: 
+  error: true
+  echo: true
+  message: false
+  warning: false
+---
+
+
+**Setup**
+
+
+
+```{r setup}
+library(tidyverse)
+library(lubridate)
+
+
+# fix the file path for your file folder structure
+gdp <- read_csv("gdp_pcap.csv")
+water <- read_csv("at_least_basic_water_source_overall_access_percent.csv")
+```
+
+```{r}
+#Clean Data Appropriately
+```
+```{r}
+#Pivot
+gdp_pivoted <- gdp |>
+  pivot_longer(cols = '2000':'2020', 
+               names_to = "year",
+               values_to = "gdp") |>
+  select(country, year, gdp)
+
+water_pivoted <- water |>
+  pivot_longer(cols = '2000':'2020',
+               names_to = "year",
+               values_to = "water")
+```
+
+
+```{r}
+#Join the stuff
+joined <- inner_join(water_pivoted, gdp_pivoted, join_by(country, year))
+```
+

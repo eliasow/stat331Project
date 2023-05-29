@@ -15,24 +15,42 @@ execute:
   warning: false
 ---
 
+# Intro 
+We choose to conduct research on the relationship between a country's access to a close reliable water source, and the gross domestic product per capita. We hypothesize that countries with access to reliable water sources would have a higher GDP than countries without access to basic water. 
+
 
 **Setup**
-
-
 
 ```{r setup}
 library(tidyverse)
 library(lubridate)
-
 
 # fix the file path for your file folder structure
 gdp <- read_csv("gdp_pcap.csv")
 water <- read_csv("at_least_basic_water_source_overall_access_percent.csv")
 ```
 
-```{r}
-#Clean Data Appropriately
-```
+# Data Description and Variable Description
+
+The At least Basic Water Source, overall access (%) dataset contains values representing the percentage of a country's population who have access to some sort of modified water source (like a well) within 30 minutes travel of them, with values for each year from 2000 to 2020. Values range from 0 - 100 representing the percentage of basic water source access. If values are missing they are expressed as NA. 
+
+**Variables**
+
+* country - A string containing the country 
+* 2000:2020 - A double ranging from 0-100 containing the basic water source overall access percent for that particular year
+
+The GDP per capita (price and inflation adjusted, in PPP $2017) dataset contains values representing the gross domestic product of a country divided by its population, with values for every year. The values obtained from 1990 to 2019 were obtained from the GDP per capita data from the World Bank, which is the data we will use in our study. Other values were obtained from the Maddison Project Database or the Penn World and then combined into this larger dataset. The dataset continues well into the future from the year 1800 to 2100 based on projections. There are no missing values as missing values were input using projections. 
+
+**Variables**
+
+* country - A string containing the country 
+* 1800:2100 - A double containing the gross domestic product for that year or a string written in the format “1.1k” representing the gross domestic product for that year. 
+
+
+# Pivot Longer
+
+For our study we chose to only analyze the years 2000 to 2020 as this was the extent of the At least Basic Water Source dataset. For both datasets we used the pivot_longer function selecting the years ‘2000’:’2020’ as our columns. 
+
 ```{r}
 #Pivot
 gdp_pivoted <- gdp |>
@@ -48,22 +66,24 @@ water_pivoted <- water |>
 ```
 
 
+# Join the datasets
+
+The At least Basic Water Source dataset had less countries observed in their study. For this reason when joined, we used an inner join as we only wanted to keep rows in both tables. We set join_by to the country and the year. 
+
 ```{r}
-#Join the stuff
+#Join
 joined <- inner_join(water_pivoted, gdp_pivoted, join_by(country, year))
 ```
 
-```{r}
-joined |>
-  filter(year == 2020) |>
-  ggplot(aes(x = water, 
-             y = gdp)) +
-  geom_point()
-```
+# Cleaning
 
-```{r filtering out k's}
-joined |>
+For convenience, we chose to clean the data after joining. To clean the data we had to convert some GDP values from the format "123.4k" to integers of the format 123,400. To do this we mutated the joined dataset using and ifelse statement to detect values ending with “k”, remove these values, and multiply them by 1000. The missing values from the water source dataset were imported as NA’s, so we didn’t have to clean these. The GDP dataset didn’t have any NA’s, so this wasn’t an issue either. 
+
+```{r}
+clean_joined <- joined |>
   mutate(gdp = ifelse(str_detect(gdp, "k$"), as.numeric(str_remove(gdp, "k$")) * 1000,
                       gdp))
 ```
+# Conclusion
 
+We hypothesize that any increase in access to water will have a corresponding increase in GDP, either immediately or shortly following the change. We will explore this claim with a linear regression and simulation. 

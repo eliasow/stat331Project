@@ -53,3 +53,12 @@ water_pivoted <- water |>
 joined <- inner_join(water_pivoted, gdp_pivoted, join_by(country, year))
 ```
 
+```{r}
+joined |>
+  filter(year == 2020) |>
+  ggplot(aes(x = water, 
+             y = gdp)) +
+  geom_point()
+```
+
+

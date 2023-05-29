@@ -81,7 +81,8 @@ For convenience, we chose to clean the data after joining. To clean the data we 
 
 ```{r}
 clean_joined <- joined |>
-  mutate(gdp = ifelse(str_detect(gdp, "k$"), as.numeric(str_remove(gdp, "k$")) * 1000,
+  mutate(gdp = ifelse(str_detect(gdp, "k$"), 
+                      as.numeric(str_remove(gdp, "k$")) * 1000,
                       gdp))
 ```
 # Conclusion

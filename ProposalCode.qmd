@@ -1,6 +1,6 @@
 ---
 title: "Final Project"
-author: "Kyle McGrath"
+author: "Kyle McGrath, Elias Wilson, Benjamin Fick"
 format: 
   html:
     self-contained: true

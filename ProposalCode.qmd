@@ -72,7 +72,9 @@ The At least Basic Water Source dataset had less countries observed in their stu
 
 ```{r}
 #Join
-joined <- inner_join(water_pivoted, gdp_pivoted, join_by(country, year))
+joined <- inner_join(water_pivoted, 
+                     gdp_pivoted, 
+                     join_by(country, year))
 ```
 
 # Cleaning

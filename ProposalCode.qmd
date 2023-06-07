@@ -15,7 +15,8 @@ execute:
   warning: false
 ---
 
-# Intro 
+# Section 1
+
 We choose to conduct research on the relationship between a country's access to a close reliable water source, and the gross domestic product per capita. We hypothesize that countries with access to reliable water sources would have a higher GDP than countries without access to basic water. 
 
 
@@ -24,10 +25,12 @@ We choose to conduct research on the relationship between a country's access to 
 ```{r setup}
 library(tidyverse)
 library(lubridate)
+library(broom)
+library(kableExtra)
 
 # fix the file path for your file folder structure
-gdp <- read_csv("gdp_pcap.csv")
-water <- read_csv("at_least_basic_water_source_overall_access_percent.csv")
+gdp <- read_csv("gdp_pcap.csv", show_col_types =FALSE)
+water <- read_csv("at_least_basic_water_source_overall_access_percent.csv", show_col_types = FALSE)
 ```
 
 # Data Description and Variable Description
@@ -72,21 +75,120 @@ The At least Basic Water Source dataset had less countries observed in their stu
 
 ```{r}
 #Join
-joined <- inner_join(water_pivoted, 
-                     gdp_pivoted, 
-                     join_by(country, year))
+joined <- inner_join(water_pivoted, gdp_pivoted, join_by(country, year))
 ```
 
 # Cleaning
 
 For convenience, we chose to clean the data after joining. To clean the data we had to convert some GDP values from the format "123.4k" to integers of the format 123,400. To do this we mutated the joined dataset using and ifelse statement to detect values ending with “k”, remove these values, and multiply them by 1000. The missing values from the water source dataset were imported as NA’s, so we didn’t have to clean these. The GDP dataset didn’t have any NA’s, so this wasn’t an issue either. 
 
-```{r}
-clean_joined <- joined |>
-  mutate(gdp = ifelse(str_detect(gdp, "k$"), 
-                      as.numeric(str_remove(gdp, "k$")) * 1000,
-                      gdp))
+
+```{r filtering out ks}
+joined_clean <- joined |>
+  mutate(gdp = ifelse(str_detect(gdp, "k$"), as.numeric(str_remove(gdp, "k$")) * 1000,
+                      gdp),
+         gdp = as.numeric(gdp),
+         water = as.numeric(water)) |>
+  mutate_all(~replace_na(., 0))
 ```
 # Conclusion
 
 We hypothesize that any increase in access to water will have a corresponding increase in GDP, either immediately or shortly following the change. We will explore this claim with a linear regression and simulation. 
+
+# Section 2
+
+## Section 2.1
+
+# Visualizing Relationship Between our Variables
+
+```{r}
+joined_clean |>
+  group_by(country) |>
+  summarize(avg_water = mean(water), avg_gdp = mean(gdp)) |>
+  ggplot(aes(x = avg_water, y = avg_gdp)) +
+  geom_point() 
+```
+
+Here is the initial scatterplot with the fitted regression model. From the graph, we can see that the relationship between average percent access to water and average GDP is quite exponential. Countries with 100% access to water on average have a much higher average GDP. However, it seems that countries with anything less than 80% access to water on average have roughly the same GDP on average. It also seems as though there is an outlier present, as one country has less than 20% access to water on average. Also, it seems as though taking the average of both percent access to water and GDP make it much easier to visualize, so this is what we will be doing going forward.
+
+# Visualizing Relationship Over Time
+
+```{r}
+joined_clean |>
+  ggplot(aes(x = water, y = gdp)) +
+  geom_point() +
+  facet_wrap(~year)
+```
+
+Looking at the relationship over time, we can see that is hasn't changed much. There is an obvious exponential trend in the data between our percent access to water variable and the overall GDP. This is helpful, because we can see now that in order for our linear regression model in the next step to make sense, we will need to perform a transformation or two. 
+
+# Visual Linear Regression
+
+```{r}
+joined_clean |>
+  group_by(country) |>
+  summarize(avg_water = mean(water), avg_gdp = mean(gdp)) |>
+  ggplot(aes(x = avg_water, y = avg_gdp)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+Here is our linear regression model before performing any transformations. The linear model overlaid above attempts to predict values of average GDP for each value of average access to water. The model uses the given data from our cleaned data set, and the grey portion above and below the line represent the standard error of the model. It doesn't fit our data very well, but the relationship we observed between our two variables previously explains this.
+
+```{r}
+joined_clean2 <- joined_clean |>
+  group_by(country) |>
+  summarize(avg_water = mean(water), avg_gdp = mean(gdp))
+
+joined_clean2 |>
+  ggplot(aes(x = avg_water, y = log(avg_gdp))) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+Here is our linear regression model after transforming our response variable. Due to the positive exponential relationship between our two variables, it made sense to take the natural log of average GDP. Also, our model now reflects a more accurate linear relationship between average percent access to water and average GDP.
+
+# Calculate Regression Equation
+
+```{r}
+initial_model <- lm(log(avg_gdp) ~ avg_water, data = joined_clean2)
+initial_model
+```
+
+Here is our estimated regression equation: log(yhat) = 0.055(avg_water) + 4.583 where yhat is predicted average GDP.
+
+# Interpreting the Regression Coefficients
+
+Intercept: 5.196 is the predicted log(avg_gdp) when all of the predictors are 0 and at reference level.  We can also say that e^5.196 or 180.55 is the predicted average GDP when all of the predictors are zero. In this case, we only have one predictor, so this is irrelevant. However, our intercept overall is also quite irrelevant, as the interpreted value is extrapolated. There is no data available for countries with no access to water.
+
+Slope: Our model predicts that for a one percent increase in average access to water, the average GDP increases by e^0.048 or 1.05. 
+
+# Looking at our Model Fit
+
+```{r}
+aug_model <- augment(initial_model) 
+
+colnames(aug_model) <- c("Response", "Water", "FittedValues", "Residuals", "Hat", "Sigma", "Cooked", "StdResid")
+
+tab2 <- aug_model |>
+  summarize(response_var = var(Response), 
+            response_fitted = var(FittedValues),
+            response_resid = var(Residuals))
+
+colnames(tab2) <- c("Response", "Fitted Values", "Residuals")
+
+kable(tab2, align = "ccc", format = "html") |>
+  add_header_above(c("Variance of Specific Values" = 3))
+```
+
+We can see above that the average variance in our response variable is the higher, where as our variance in the residuals is the highest. This means that our model does a fairly good job of predicting average GDP.
+
+# Exploring "Model Quality"
+
+```{r}
+expl_var <- tab2[2]/tab2[1]
+
+kable(expl_var, align = "c", format = "html", col.names = c("R-Squared"))
+```
+
+Based on the R^2 value above, we can see that 57.15% of the variability in average GDP is explained by our model based on average percent access to water. This means that our model does a fairly good job of predicting average GDP.

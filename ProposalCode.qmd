@@ -156,13 +156,13 @@ initial_model
 ```
 
 
-Here is our estimated regression equation: $$log(yhat) = 0.055(avg water) + 4.583$$ where yhat is predicted average GDP.
+Here is our estimated regression equation: $$log(\hat{y}) = 0.055(avg water) + 4.583$$ where yhat is predicted average GDP.
 
 # Interpreting the Regression Coefficients
 
 Intercept: 5.196 is the predicted log(avg_gdp) when all of the predictors are 0 and at reference level.  We can also say that e^5.196 or 180.55 is the predicted average GDP when all of the predictors are zero. In this case, we only have one predictor, so this is irrelevant. However, our intercept overall is also quite irrelevant, as the interpreted value is extrapolated. There is no data available for countries with no access to water.
 
-Slope: Our model predicts that for a one percent increase in average access to water, the average GDP increases by e^0.048 or 1.05. 
+Slope: Our model predicts that for a one percent increase in average access to water, the average GDP increases by $$e^.048$$ or 1.05. 
 
 # Looking at our Model Fit
 

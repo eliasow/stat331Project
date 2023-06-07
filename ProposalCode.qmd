@@ -155,7 +155,8 @@ initial_model <- lm(log(avg_gdp) ~ avg_water, data = joined_clean2)
 initial_model
 ```
 
-Here is our estimated regression equation: log(yhat) = 0.055(avg_water) + 4.583 where yhat is predicted average GDP.
+
+Here is our estimated regression equation: $$log(yhat) = 0.055(avg water) + 4.583$$ where yhat is predicted average GDP.
 
 # Interpreting the Regression Coefficients
 
